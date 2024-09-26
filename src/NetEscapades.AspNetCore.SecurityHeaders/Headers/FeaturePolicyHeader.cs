@@ -7,7 +7,8 @@ namespace NetEscapades.AspNetCore.SecurityHeaders.Headers;
 /// <summary>
 /// The header value to use for Feature-Policy.
 /// </summary>
-public class FeaturePolicyHeader : DocumentHeaderPolicyBase
+[Obsolete("The Feature-Policy header has been deprecated. Use Permissions-Policy instead.")]
+public class FeaturePolicyHeader : HeaderPolicyBase
 {
     private readonly string _value;
 

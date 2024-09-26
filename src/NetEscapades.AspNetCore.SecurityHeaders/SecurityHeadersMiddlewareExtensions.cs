@@ -14,7 +14,7 @@ public static class SecurityHeadersMiddlewareExtensions
     /// Adds middleware to your web application pipeline to automatically add security headers to requests
     /// </summary>
     /// <param name="app">The IApplicationBuilder passed to your Configure method.</param>
-    /// <param name="policies">A configured policy collection.</param>
+    /// <param name="policies">A configured policy collection to use by default.</param>
     /// <returns>The original app parameter</returns>
     public static IApplicationBuilder UseSecurityHeaders(this IApplicationBuilder app, HeaderPolicyCollection policies)
     {
@@ -28,9 +28,8 @@ public static class SecurityHeadersMiddlewareExtensions
             throw new ArgumentNullException(nameof(policies));
         }
 
-        var service = app.ApplicationServices.GetService(typeof(ICustomHeaderService)) ?? new CustomHeaderService();
-
-        return app.UseMiddleware<SecurityHeadersMiddleware>(service, policies);
+        var opts = app.ApplicationServices.GetService(typeof(CustomHeaderOptions)) as CustomHeaderOptions;
+        return app.UseMiddleware(policies, opts);
     }
 
     /// <summary>
@@ -61,6 +60,53 @@ public static class SecurityHeadersMiddlewareExtensions
     /// <returns>The original app parameter</returns>
     public static IApplicationBuilder UseSecurityHeaders(this IApplicationBuilder app)
     {
-        return app.UseSecurityHeaders(policies => policies.AddDefaultSecurityHeaders());
+        if (app == null)
+        {
+            throw new ArgumentNullException(nameof(app));
+        }
+
+        var options = app.ApplicationServices.GetService(typeof(CustomHeaderOptions)) as CustomHeaderOptions;
+        var policy = options?.DefaultPolicy ?? new HeaderPolicyCollection().AddDefaultSecurityHeaders();
+
+        return app.UseMiddleware(policy, options);
+    }
+
+    /// <summary>
+    /// Adds middleware to your web application pipeline using the specified policy by default.
+    /// </summary>
+    /// <param name="app">The IApplicationBuilder passed to your Configure method.</param>
+    /// <param name="policyName">The name of the policy to apply</param>
+    /// <returns>The original app parameter</returns>
+    public static IApplicationBuilder UseSecurityHeaders(this IApplicationBuilder app, string policyName)
+    {
+        if (app == null)
+        {
+            throw new ArgumentNullException(nameof(app));
+        }
+
+        if (string.IsNullOrEmpty(policyName))
+        {
+            throw new ArgumentNullException(nameof(policyName));
+        }
+
+        var options = app.ApplicationServices.GetService(typeof(CustomHeaderOptions)) as CustomHeaderOptions;
+        var policy = options?.GetPolicy(policyName);
+        if (policy is null)
+        {
+            throw new InvalidOperationException(
+                $"Error configuring security headers middleware: policy '{policyName}' could not be found. "
+                + "Configure the policies for your application by calling IServiceCollection.AddSecurityHeaderPolicies() "
+                + $"in your application startup code and add a namedpolicy called '{policyName}'");
+        }
+
+        return app.UseMiddleware(policy, options);
+    }
+
+    private static IApplicationBuilder UseMiddleware(
+        this IApplicationBuilder app,
+        IReadOnlyHeaderPolicyCollection policies,
+        CustomHeaderOptions? options)
+    {
+        return app.UseMiddleware<SecurityHeadersMiddleware>(options ?? new(), policies);
     }
 }

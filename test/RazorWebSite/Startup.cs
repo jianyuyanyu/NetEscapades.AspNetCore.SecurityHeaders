@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using NetEscapades.AspNetCore.SecurityHeaders;
 
 namespace RazorWebSite;
 
@@ -10,9 +12,12 @@ public class Startup
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services)
     {
-#pragma warning disable 618 // Version_2_1 is obsolete
-        services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
-#pragma warning restore 618
+        services.AddMvc();
+        services.AddSecurityHeaderPolicies()
+            .AddPolicy("CustomHeader", policy =>
+            {
+                policy.AddCustomHeader("Custom-Header", "MyValue");
+            });
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -47,16 +52,16 @@ public class Startup
                 builder.AddStyleSrc().From("*").WithHashTagHelper().UnsafeHashes();
             })
             .RemoveServerHeader();
-
-
         app.UseSecurityHeaders(policyCollection);
 
         app.UseStaticFiles();
-#if NETCOREAPP3_0
-            app.UseRouting();
-            app.UseEndpoints(endpoints => { endpoints.MapRazorPages(); });
-#else
-        app.UseMvc();
-#endif
+        app.UseRouting();
+        app.UseSecurityHeaders(policyCollection);
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapRazorPages();
+            endpoints.MapGet("/api", context => context.Response.WriteAsync("ping-pong"))
+                .WithSecurityHeadersPolicy("CustomHeader");
+        });
     }
 }

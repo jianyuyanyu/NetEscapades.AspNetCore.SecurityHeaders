@@ -1,6 +1,7 @@
 ﻿using System;
 using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
+using NetEscapades.AspNetCore.SecurityHeaders.Headers;
 using Xunit;
 
 namespace NetEscapades.AspNetCore.SecurityHeaders.Test;
@@ -180,5 +181,16 @@ public class PermissionsPolicyBuilderTests
         var result = builder.Build();
 
         result.Should().Be("accelerometer=()");
+    }
+
+    [Fact]
+    public void PermissionsPolicy_DefaultSecure_IsEquivalent()
+    {
+        var builder = new PermissionsPolicyBuilder()
+            .AddDefaultSecureDirectives();
+
+        var expected = builder.Build();
+        
+        PermissionsPolicyHeaderExtensions.DefaultSecurePolicy.Should().Be(expected);
     }
 }

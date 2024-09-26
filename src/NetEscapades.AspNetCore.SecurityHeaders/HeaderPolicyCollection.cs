@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using NetEscapades.AspNetCore.SecurityHeaders.Headers;
+using NetEscapades.AspNetCore.SecurityHeaders.Infrastructure;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.AspNetCore.Builder;
@@ -8,12 +9,23 @@ namespace Microsoft.AspNetCore.Builder;
 /// <summary>
 /// Defines the policies to use for customising security headers for a request.
 /// </summary>
-public class HeaderPolicyCollection : Dictionary<string, IHeaderPolicy>
+public class HeaderPolicyCollection : Dictionary<string, IHeaderPolicy>, IReadOnlyHeaderPolicyCollection
 {
     /// <summary>
-    /// The content types that document-based headers such as Content-Security-Policy should apply to
+    /// Initializes a new instance of the <see cref="HeaderPolicyCollection"/> class.
     /// </summary>
-    internal string[]? DocumentHeaderContentTypePrefixes { get; set; } = { "text/html", "application/javascript", "text/javascript" };
+    public HeaderPolicyCollection()
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HeaderPolicyCollection"/> class.
+    /// </summary>
+    /// <param name="other">The <see cref="IReadOnlyHeaderPolicyCollection"/> policies to copy</param>
+    internal HeaderPolicyCollection(IReadOnlyHeaderPolicyCollection other)
+        : base(other)
+    {
+    }
 
     /// <summary>
     /// Apply document-based headers such as Content-Security-Policy to all responses serving the provided
@@ -28,10 +40,9 @@ public class HeaderPolicyCollection : Dictionary<string, IHeaderPolicy>
     /// for details). However, in some cases, you may want to apply your document headers to additional
     /// content-types.</remarks>
     /// <returns>The <see cref="HeaderPolicyCollection"/> for chaining</returns>
+    [Obsolete("This method no longer has any effect - all headers are applied to all responses by default.")]
     public HeaderPolicyCollection ApplyDocumentHeadersToContentTypes(string[] contentTypes)
     {
-        DocumentHeaderContentTypePrefixes = contentTypes ?? throw new ArgumentNullException(nameof(contentTypes));
-
         return this;
     }
 
@@ -44,10 +55,9 @@ public class HeaderPolicyCollection : Dictionary<string, IHeaderPolicy>
     /// for details). However, in some cases, you may want to apply your document headers to additional
     /// content-types.</remarks>
     /// <returns>The <see cref="HeaderPolicyCollection"/> for chaining</returns>
+    [Obsolete("This method no longer has any effect - all headers are applied to all responses by default.")]
     public HeaderPolicyCollection ApplyDocumentHeadersToAllResponses()
     {
-        DocumentHeaderContentTypePrefixes = null;
-
         return this;
     }
 }
