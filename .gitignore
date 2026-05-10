@@ -252,3 +252,6 @@ tools/*
 
 # Verify
 **/*.received.txt
+
+# AI
+.claude/
